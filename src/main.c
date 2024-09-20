@@ -30,19 +30,20 @@ int main(void)
 	Duck_Object penger = Create_Duck_Object();
 	penger.model = LoadModel("assets/models/penger.obj");
 
-	Add_Moduloid(&penger, MODULOID_SQUASH);
-	float freq = 2.0f;
-	float amplitude = 0.1f;
-	penger.parameters[0][0] = &freq;
-	penger.parameters[0][1] = &amplitude;
+	Vector3 pos = {1.0f,0.0f,0.0f};
+	if((Add_Moduloid(&penger, MODULOID_COPY_LOCATION)) != -1) {
+		penger.parameters[0][0] = &pos;
+	} else {
+		TraceLog(LOG_ERROR, "Failed to add moduloid.");
+	}
 
-	Add_Moduloid(&penger, MODULOID_HOVER);
-	float h_freq = 0.5f;
-	float h_amp = 1.0f;
-	float h_offset = 2.0f;
-	penger.parameters[1][0] = &h_freq;
-	penger.parameters[1][1] = &h_amp;
-	penger.parameters[1][2] = &h_offset;
+	// Add_Moduloid(&penger, MODULOID_HOVER);
+	// float h_freq = 0.5f;
+	// float h_amp = 1.0f;
+	// float h_offset = 2.0f;
+	// penger.parameters[1][0] = &h_freq;
+	// penger.parameters[1][1] = &h_amp;
+	// penger.parameters[1][2] = &h_offset;
 
 	/////////////////////
 	// GAME LOOP BEGIN //

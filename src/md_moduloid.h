@@ -16,6 +16,7 @@
 enum Moduloids {
 	MODULOID_SQUASH,
 	MODULOID_HOVER,
+	MODULOID_COPY_LOCATION,
 	NUM_MODULOIDS
 };
 
@@ -37,4 +38,9 @@ Matrix Moduloid_Hover(float frequency, float amplitude, float offset)
 	return result;
 }
 
+Matrix Moduloid_Copy_Location(Vector3 target)
+{
+	Matrix result = MatrixTranslate(target.x, target.y, target.z);
+	return result;
+}
 #endif /* MD_MODULOID_H */
