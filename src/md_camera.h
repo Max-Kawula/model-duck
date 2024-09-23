@@ -5,7 +5,7 @@
 #include "raymath.h"
 
 #define CAM_SPEED (2.00f)
-#define ORBIT_SPEED (0.01f)
+#define ORBIT_SPEED (0.005f)
 #define SCROLL_SPEED (0.10f)
 
 /* Default Camera State */
@@ -14,6 +14,8 @@
 #define DOWN ((Vector3){0.0f,-1.0f,0.0f})
 #define FOV 60.0f
 #define INITIAL_POS ((Vector3){0.0f,2.5f,3.0f})
+
+#define DISABLE_MIDDLE 1
 
 void Drive_Camera(Camera* camera)
 {
@@ -62,6 +64,38 @@ void Drive_Camera(Camera* camera)
 
 	/* APPLY TRANSFORMS */
 	camera->target = Vector3Add(camera->target, translate);
+	camera->position = Vector3Add(camera->target, offset);
+
+	return;
+}
+
+void Pivot_Camera(Camera* camera)
+{
+	Vector2 mouse_dir = Vector2Zero();
+	float wheel_mag = SCROLL_SPEED*GetMouseWheelMove();
+
+	Vector3 offset = Vector3Subtract(camera->position, camera->target);
+	Vector3 basis_x = Vector3Normalize(Vector3CrossProduct(offset, camera->up)); // not normalized!
+	float camera_scale = Vector3Length(offset);
+
+
+	/* ROTATION */
+	mouse_dir = Vector2Scale(GetMouseDelta(), -ORBIT_SPEED);
+	
+	offset = Vector3RotateByAxisAngle(offset, UP, mouse_dir.x);
+	offset = Vector3RotateByAxisAngle(offset, basis_x, -mouse_dir.y);
+
+	/* SCALING */
+	if(wheel_mag) {
+		if(camera_scale < 0.1f)
+			wheel_mag = Clamp(wheel_mag, -999.9f, 0); //no more zoom in
+		if(camera_scale > 40.0f)
+			wheel_mag = Clamp(wheel_mag, 0, 999.9f); // assumption you can't scroll wheel faster
+		
+		offset = Vector3Scale(offset, 1 - wheel_mag);
+	}
+
+	/* APPLY TRANSFORMS */
 	camera->position = Vector3Add(camera->target, offset);
 
 	return;

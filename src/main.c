@@ -8,6 +8,7 @@
 #include "md_camera.h"
 #include "md_moduloid.h"
 #include "md_object.h"
+#include "md_entities.h"
 
 int main(void) 
 {
@@ -19,41 +20,33 @@ int main(void)
 		
 	SetTargetFPS(60);
 	Camera camera = {
-		{0.0f, 0.0f, 1.0f},
-		{0.0f, 0.0f, -1.0f},
+		{0.0f, 5.0f, 5.0f},
+		{0.0f, 1.0f, 0.0f},
 		{0.0f, 1.0f, 0.0f},
 		60.f,
 		CAMERA_PERSPECTIVE
 	};
 
+	DisableCursor();
+
 
 	Duck_Object penger = Create_Duck_Object();
 	penger.model = LoadModel("assets/models/penger.obj");
+	Entity player = { 0 };
 
-	Vector3 pos = {1.0f,0.0f,0.0f};
-	if((Add_Moduloid(&penger, MODULOID_COPY_LOCATION)) != -1) {
-		penger.parameters[0][0] = &pos;
-	} else {
-		TraceLog(LOG_ERROR, "Failed to add moduloid.");
-	}
+	penger.moduloid[0].id = MODULOID_MOVE;
 
-	// Add_Moduloid(&penger, MODULOID_HOVER);
-	// float h_freq = 0.5f;
-	// float h_amp = 1.0f;
-	// float h_offset = 2.0f;
-	// penger.parameters[1][0] = &h_freq;
-	// penger.parameters[1][1] = &h_amp;
-	// penger.parameters[1][2] = &h_offset;
-
-	/////////////////////
-	// GAME LOOP BEGIN //
-	/////////////////////
-	
+	penger.moduloid[0].param.reference[0] = (void*)&player;
 	while(!WindowShouldClose()) {
-		/* UPDATE LOGIC */	
-		Drive_Camera(&camera);
+
+		
+		Control_Entity(&player, &camera);
+		Vector3 offset = Vector3Subtract(camera.position, camera.target);
+		camera.target = Vector3Add(player.pos, (Vector3){0.0f,1.0f,0.0f});
+		camera.position = Vector3Add(camera.target, offset);
 		penger.model.transform = MatrixIdentity();
 		Apply_Moduloid_Stack(&penger);
+		Pivot_Camera(&camera);
 
 		BeginDrawing();
 			/* DRAW HERE */
