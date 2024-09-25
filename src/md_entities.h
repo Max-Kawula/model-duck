@@ -5,9 +5,9 @@
 #include "raymath.h"
 
 #define MAX_SPEED (8.00f)
-#define MAX_ACCEL (7.00f)
+#define MAX_ACCEL (4.00f)
 #define FRICTION (5.00f) 
-#define MIN_SPEED (0.001f)
+#define MIN_SPEED (0.0001f)
 
 typedef struct {
 	Vector3 pos;

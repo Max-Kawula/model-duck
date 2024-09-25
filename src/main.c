@@ -16,6 +16,8 @@ int main(void)
 	const int screenWidth = 800;
 	const int screenHeight = 600;
 
+	SetConfigFlags(FLAG_MSAA_4X_HINT);
+
 	InitWindow(screenWidth, screenHeight, "raylib - model duck");
 		
 	SetTargetFPS(60);
@@ -27,16 +29,17 @@ int main(void)
 		CAMERA_PERSPECTIVE
 	};
 
-	DisableCursor();
-
-
 	Duck_Object penger = Create_Duck_Object();
 	penger.model = LoadModel("assets/models/penger.obj");
+	
+	penger.moduloid[0].id = MODULOID_SPLAT;
+	penger.moduloid[0].param.value[0] = 12.0f;// intensity
+	penger.moduloid[0].param.value[1] = -1.0f;// time_elapsed
+
 	Entity player = { 0 };
-
-	penger.moduloid[0].id = MODULOID_MOVE;
-
-	penger.moduloid[0].param.reference[0] = (void*)&player;
+	penger.moduloid[1].id = MODULOID_MOVE;
+	penger.moduloid[1].param.reference[0] = (void*)&player;
+	
 	while(!WindowShouldClose()) {
 
 		
@@ -44,9 +47,24 @@ int main(void)
 		Vector3 offset = Vector3Subtract(camera.position, camera.target);
 		camera.target = Vector3Add(player.pos, (Vector3){0.0f,1.0f,0.0f});
 		camera.position = Vector3Add(camera.target, offset);
+
 		penger.model.transform = MatrixIdentity();
 		Apply_Moduloid_Stack(&penger);
+
 		Pivot_Camera(&camera);
+
+		if(IsKeyPressed(KEY_E)) {
+			EnableCursor();
+		}
+
+		if(IsKeyPressed(KEY_T)) {
+			DisableCursor();
+		}
+
+		if(IsKeyPressed(KEY_G)) {
+			penger.moduloid[0].param.value[1] = 0.0f;
+		}
+
 
 		BeginDrawing();
 			/* DRAW HERE */

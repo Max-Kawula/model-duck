@@ -51,61 +51,8 @@ Duck_Object Create_Duck_Object(void)
 	return obj;
 }
 
-// TODO
-// i need to deteremine if this function is entirely stupid.
-// if this function has an unknown outcome, it could mean we need EVEN MORE CODE
-// to handle all the stupid edge cases (theres like 3 cases, but cumbersome)
-//
-// i feel like segfault is better option than writing robust code.
-//
-// im deprecating this function, don't use it!
-int Add_Moduloid(Duck_Object* obj, int moduloid)
-{
-    	/* VALIDATION */
-	if(obj == NULL) {
-		TraceLog(LOG_ERROR, "No Duck Object Provided, did not add moduloid.");
-		return -1;
-	}
-
-	/* ADD MODULOID */
-	for(int i = 0; i < MAX_MODULOIDS; ++i) {
-		if(obj->moduloid[i].id == -1) {
-			obj->moduloid[i].id = moduloid;
-			TraceLog(LOG_INFO, "Successfully added moduloid:%d to slot[%d].", moduloid, i);
-			return i;
-		}
-	}
-
-	TraceLog(LOG_WARNING, "No free slots, moduloid not added.");
-	return -1;
-}
-
-void Remove_Moduloid(Duck_Object* obj, int slot)
-{
-	if(obj == NULL) {
-		TraceLog(LOG_ERROR, "No Duck Object Provided.");
-		return;
-	}
-
-	if(obj->moduloid[slot].id == -1) {
-		TraceLog(LOG_WARNING, "Tried to remove empty moduloid");
-		return;
-	}
-
-	obj->moduloid[slot].id = -1;
-	for(int i = 0; i < MAX_PARAMETERS; ++i) {
-		obj->moduloid[slot].param.value[i] = 0.0f;
-	}
-}
-
-//FIXME STILL FIXING COMPILATION ERRORS!
 void Apply_Moduloid(Duck_Object* obj, int slot)
 {
-	if(obj == NULL) {
-		TraceLog(LOG_ERROR, "No Duck Object Provided.");
-		return;
-	}
-	
 	Matrix* base = &obj->model.transform;
 	
 	if(slot > MAX_MODULOIDS) {
@@ -120,26 +67,26 @@ void Apply_Moduloid(Duck_Object* obj, int slot)
 		return;
 	}
 
-	union Parameter p = obj->moduloid[slot].param;
+	union Parameter* p = &obj->moduloid[slot].param;
 
 	switch(id) {
 	case MODULOID_SQUASH:
-		*base = MatrixMultiply(*base, Moduloid_Squash(p.value[0], p.value[1]));
+		*base = MatrixMultiply(*base, Moduloid_Squash(p->value[0], p->value[1]));
 		break;
 	case MODULOID_HOVER:
-		*base = MatrixMultiply(*base, Moduloid_Hover(p.value[0], p.value[1], p.value[2]));
+		*base = MatrixMultiply(*base, Moduloid_Hover(p->value[0], p->value[1], p->value[2]));
 		break;
 	case MODULOID_COPY_LOCATION:
-		*base = MatrixMultiply(*base, Moduloid_Copy_Location(p.vec3[0]));
-		break;
-	case MODULOID_CONTROLLER_TO_QUATERNION:
-		*base = MatrixMultiply(*base, Moduloid_Controller_To_Quaternion());
+		*base = MatrixMultiply(*base, Moduloid_Copy_Location(p->vec3[0]));
 		break;
 	case MODULOID_WOBBLE:
-		*base = MatrixMultiply(*base, Moduloid_Wobble(p.value[0]));
+		*base = MatrixMultiply(*base, Moduloid_Wobble(p->value[0]));
 		break;
 	case MODULOID_MOVE:
-		*base = MatrixMultiply(*base, Moduloid_Move((Entity*)p.reference[0]));
+		*base = MatrixMultiply(*base, Moduloid_Move((Entity*)p->reference[0]));
+		break;
+	case MODULOID_SPLAT:
+		*base = MatrixMultiply(*base, Moduloid_Splat(p->value[0], &p->value[1]));
 		break;
 	case -1:
 		break;
@@ -154,7 +101,5 @@ void Apply_Moduloid_Stack(Duck_Object* obj)
 	}
 	return;
 }
-
-
 
 #endif /* MD_OBJECT_H */

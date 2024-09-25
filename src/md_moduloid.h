@@ -18,9 +18,9 @@ enum Moduloids {
 	MODULOID_SQUASH,
 	MODULOID_HOVER,
 	MODULOID_COPY_LOCATION,
-	MODULOID_CONTROLLER_TO_QUATERNION,
 	MODULOID_WOBBLE,
 	MODULOID_MOVE,
+	MODULOID_SPLAT,
 	NUM_MODULOIDS
 };
 
@@ -48,46 +48,64 @@ Matrix Moduloid_Copy_Location(Vector3 target)
 	return result;
 }
 
-Matrix Moduloid_Controller_To_Quaternion(void)
-{
-	Matrix result = MatrixIdentity();
-	Quaternion rotation = QuaternionIdentity();
-
-	rotation.x = GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X);
-	rotation.y = GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_Y);
-	rotation.z = GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_Y);
-
-	rotation.w = 0.5f*(1.0f + GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_TRIGGER));
-
-	result = QuaternionToMatrix(rotation);
-	return result;
-}
-
-// speed is a factor between 0..1
 Matrix Moduloid_Wobble(float speed)
 {
 	Matrix result = MatrixIdentity();
-	const float factor = 25.0f;
+	float factor = 17.5f; // affects frequency!
 	float time = Wrap(GetTime(), -PI, PI);
-	Matrix y_wobble = MatrixRotateY(speed*0.5f*sinf(factor*time));
-	Matrix z_wobble = MatrixRotateZ(-speed*0.5f*cosf(factor*time));
-	Matrix x_wobble = MatrixRotateX(speed*PI/6.0f);
-	result = MatrixMultiply(y_wobble, z_wobble);
-	result = MatrixMultiply(result, x_wobble);
+
+	float y_bob = speed*0.5f + speed*0.2f*cosf(2*factor*time);
+	
+	float yaw = speed*0.5f*sinf(factor*time);
+	float roll = -speed*0.5f*cosf(factor*time);
+	float pitch = speed*PI/6.0f;
+	
+	Quaternion rotation = QuaternionFromEuler(pitch, yaw, roll);
+	result = QuaternionToMatrix(rotation);
+	result.m13 = y_bob; //translation
+
 	return result;
 }
 
 Matrix Moduloid_Move(Entity* entity)
 {
 	Matrix result = MatrixIdentity();
-	float speed = Vector3Length(entity->vel)/MAX_SPEED;
+	float speed = Vector3Length(entity->vel)/MAX_SPEED; 
+	speed = Clamp(speed, 0.0f, 1.0f); // speed can exceed MAX_SPEED, could result in wonky rotations
 
-	result = Moduloid_Wobble(speed);
+	result = Moduloid_Squash(1.0f, 0.05f);
 	
-	result = MatrixMultiply(result, Moduloid_Squash(1.0f, 0.05f));
+	result = MatrixMultiply(result, Moduloid_Wobble(speed));
 	result = MatrixMultiply(result, MatrixRotateY(entity->yaw));
 	result = MatrixMultiply(result, Moduloid_Copy_Location(entity->pos));
 
 	return result;
 }
+
+Matrix Moduloid_Splat(float intensity, float* time_elapsed)
+{
+	Matrix result = MatrixIdentity();
+
+	if(*time_elapsed == -1.0f) {
+		return result;
+	}
+
+	*time_elapsed += GetFrameTime();
+
+	const float duration = 2.0f;
+
+	if(*time_elapsed > duration) {
+		*time_elapsed = -1.0f;
+		return result;
+	}
+
+	float animation_param = 1.0f + *time_elapsed/-duration; // ranges from 0..1
+
+	float splat = 1.0f + animation_param*animation_param * -sinf((*time_elapsed)*intensity);
+
+	result = MatrixScale(2.0f-splat, splat, 2.0f-splat);
+
+	return result;
+}
+
 #endif /* MD_MODULOID_H */
